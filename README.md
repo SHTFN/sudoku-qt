@@ -1,65 +1,120 @@
-# Qt
+# Sudoku Qt
 
-Текущий статус тестирования GitHub Actions: [![CI/CD](../../actions/workflows/classroom.yml/badge.svg?branch=main&event=workflow_dispatch)](../../actions/workflows/classroom.yml).
+Sudoku Qt is a desktop Sudoku application written in C++ with Qt Widgets. The project includes a playable graphical interface, board validation, save/load support, a timer, undo/redo history, candidate notes, hints, and several solving strategies.
 
-## Структура проекта
+## Features
 
-Лабораторная работа состоит из **двух** частей: *проект* и набор *тестов* ([GoogleTest](https://github.com/google/googletest)). Проект состоит из [`заголовочных файлов`](./include/) и [`файлов с исходным кодом`](./src/), включая [`main.cpp`](src/main.cpp), содержащий точку входа программы. Unit-тесты для тестирования проекта располагаются в директории [`test/`](./test/), точка входа для запуска тестов располагается в файле [`tests.cpp`](test/tests.cpp).
+- 9x9 Sudoku board with interactive cell input.
+- Move validation and solved-board detection.
+- Candidate mode for pencil-mark notes.
+- Automatic candidate generation.
+- Undo and redo for game moves.
+- Built-in hint system based on Sudoku solving strategies.
+- Save and load games as JSON files.
+- Game timer.
+- Interface translations for English, Russian, and Romanian.
 
-| Директория             | Назначение                                                   |
-| ---------------------- | ------------------------------------------------------------ |
-| [`include/`](include/) | общие заголовочные файлы проекта (API или интерфейс проекта) |
-| [`src/`](src/)         | исходные файлы проекта                                       |
-| [`test/`](test/)       | вспомогательные и исходные файлы с тестами                   |
+## Project Structure
 
-Вам необходимо настроить [QMake](https://doc.qt.io/qt-5/qmake-manual.html) [проект](qt.pro).
-
-*Примечание*. [Файл ресурсов](https://doc.qt.io/qt-5/resources.html) следует разместить в *корне* репозитория.
-
-## Конфигурация и сборка проекта
-
-[Конфигурация](https://doc.qt.io/qt-5/qmake-variable-reference.html#config) выбранной цели на сборку (тесты или основное решение).
-
-```cmd
-qmake qt.pro CONFIG+=<build_type> CONFIG+=<sub_target> GTEST_ROOT=<path/to/googletest>
+```text
+include/       Public headers grouped by module
+src/           Application source files
+test/          GoogleTest-based unit tests
+tests/         Test data, including sample boards
+translations/  Qt translation files
+resources.qrc  Qt resource file
+qt.pro         qmake project file
 ```
 
-где:
+Main modules:
 
-* `build_type` - тип сборки (`debug` или `release`)
-* `sub_target` - это либо `solution` (GUI), либо `tests` (тесты)
-* `GTEST_ROOT` *(необязателен в `solution`)* - *корень* библиотеки GoogleTest:
+- `core` - Sudoku board model, timer, errors, and undo/redo stack.
+- `game` - game state and high-level game actions.
+- `solver` - validation and solving/hint logic.
+- `storage` - JSON save/load support.
+- `ui` - Qt Widgets interface.
 
-  * заголовочные файлы лежат в `<path/to/googletest>/include`
-  * библиотека лежит в `<path/to/googletest>/lib`
+## Requirements
 
-Ключ `CONFIG+=<build_type>` *необязателен* на Windows, см. ниже.
+- Qt 5.12 or newer.
+- C++20-compatible compiler.
+- qmake.
+- GoogleTest only if you want to build the test target.
 
-### Windows
+The project was built with Qt 5.12.12 on macOS using the `clang_64` kit.
 
-На Windows по умолчанию генерируются *Makefile*'ы на Release и Debug сборки.
+## Build the Application
 
-Сборка:
-
-```powershell
-nmake -f Makefile.Debug
-# если Debug-сборка 
-
-nmake -f Makefile.Release
-# если Release-сборка
-```
-
-Запуск:
-
-* `.\debug\qt.exe` - если Debug-сборка
-* `.\release\qt.exe` - если Release-сборка
-
-### Linux/MacOS
-
-На Linux/MacOS генерируется *Makefile* заданной `CONFIG+=<build_type>` типа сборки.
-
-Сборка и запуск:
+From the project root:
 
 ```bash
-make && ./qt
+qmake qt.pro CONFIG+=release CONFIG+=solution
+make -j8
 ```
+
+The `CONFIG+=solution` flag is required because the GUI application sources are enabled in the `solution` block of `qt.pro`.
+
+On macOS, Qt Creator usually creates a separate build directory, for example:
+
+```text
+~/Desktop/build-qt-Desktop_Qt_5_12_12_clang_64bit-Release
+```
+
+The built application will be:
+
+```text
+qt.app
+```
+
+Run it with:
+
+```bash
+open qt.app
+```
+
+## Package for macOS
+
+To run the app on another Mac, deploy the Qt frameworks into the `.app` bundle:
+
+```bash
+cd ~/Desktop/build-qt-Desktop_Qt_5_12_12_clang_64bit-Release
+/Users/stefanalbu/Qt5.12.12/5.12.12/clang_64/bin/macdeployqt qt.app
+```
+
+Then create an archive:
+
+```bash
+ditto -c -k --keepParent qt.app qt-macos-release.zip
+```
+
+Send `qt-macos-release.zip` to another user. After extracting it, they can launch `qt.app`.
+
+## Build on Windows
+
+Open `qt.pro` in Qt Creator and add these qmake arguments:
+
+```text
+CONFIG+=release CONFIG+=solution
+```
+
+For an MSVC kit, build with:
+
+```powershell
+qmake qt.pro CONFIG+=release CONFIG+=solution
+nmake -f Makefile.Release
+```
+
+For a MinGW kit, use:
+
+```powershell
+qmake qt.pro CONFIG+=release CONFIG+=solution
+mingw32-make
+```
+
+After building, deploy Qt DLLs:
+
+```powershell
+windeployqt release\qt.exe
+```
+
+Distribute the whole `release` directory, not only `qt.exe`.
